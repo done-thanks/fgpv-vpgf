@@ -248,23 +248,18 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
                         map.legendBlocks.removeEntry(map.legendBlocks.entries[0]);
                     }
 
-                    map.legendMappings = {};
-
                     // remove all layers from map
                     map.layerRecords.forEach(layerRecord => {
                         map.instance.removeLayer(layerRecord._layer);
                     });
-
-                    map.layerRecords = [];
-                    map.layerBlueprints = [];
-                    map.layers = [];
 
                     // remove all bounding boxes
                     map.boundingBoxRecords.forEach(boundingRecord => {
                         map.instance.removeLayer(boundingRecord);
                     });
 
-                    map.boundingBoxRecords = [];
+                    // temporary solution for CESI until API complete
+                    map.resetLayers();
 
                     // close any open panels
                     stateManager.setActive({ tableFulldata: false } , { sideMetadata: false }, { sideSettings: false });

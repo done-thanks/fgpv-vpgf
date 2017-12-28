@@ -221,6 +221,7 @@ function apiBlock($rootScope, globalRegistry, geoService, configService, events,
      */
     function loadRcsLayers(keys) {
         // trigger RCS web call
+        bookmarkService.emptyOrderdBookmarkIds();   // May need to revisit this to see the difference between 'emptyOrderdBookmarkIds' and 'emptyStoredBookmark'
         configService.rcsAddKeys(keys);
     }
 
