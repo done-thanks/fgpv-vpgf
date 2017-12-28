@@ -40,7 +40,7 @@ function rvDetailsRecordEsrifeatureItem(geoService, Geo, SymbologyStack) {
     function link(scope, el) {
         const self = scope.self;
 
-        const excludedColumns = ['rvSymbol', 'rvInteractive'];
+        const excludedColumns = ['rvSymbol', 'rvInteractive', 'OBJECTID', 'Symbol'];
 
         self.isExpanded = self.solorecord;
         self.isRendered = self.solorecord;
