@@ -38,7 +38,7 @@ angular
     .module('app.core')
     .factory('configService', configService);
 
-function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, events, gapiService, ConfigObject, stateManager) {
+function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, events, gapiService, ConfigObject, stateManager, referenceService) {
     const DEFAULT_LANGS = ['en-CA', 'fr-CA'];
 
     const States = {
@@ -263,6 +263,10 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
 
                     // close any open panels, but open main TOC
                     stateManager.setActive({ tableFulldata: false } , { sideMetadata: false }, { sideSettings: false }, { mainToc: true });
+
+                    // Removes the highlighted features and markers if feature details was open
+                    map.highlightLayer.clearHilight();
+                    angular.element(referenceService.mapNode).toggleClass('rv-map-highlight', false);
                 }
             });
         }
