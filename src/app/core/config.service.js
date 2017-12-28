@@ -261,8 +261,8 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
                     // temporary solution for CESI until API complete
                     map.resetLayers();
 
-                    // close any open panels
-                    stateManager.setActive({ tableFulldata: false } , { sideMetadata: false }, { sideSettings: false });
+                    // close any open panels, but open main TOC
+                    stateManager.setActive({ tableFulldata: false } , { sideMetadata: false }, { sideSettings: false }, { mainToc: true });
                 }
             });
         }
