@@ -49,9 +49,7 @@ function fullScreenService($rootElement, configService, $interval, events) {
     function exitFullScreenHandler() {
         if (!document.fullscreenElement && !document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
             exitFullScreen();
-            // give browser/esri some time to update center, time it will take is unknown (roughly 0.5s to 1s)
-            stopInterval = $interval(centerMap, 100);
-            centerMap(); // invoke immediately just in case the transition was faster than 100ms
+            onChange();
         }
     }
 
