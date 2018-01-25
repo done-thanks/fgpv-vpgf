@@ -30,6 +30,12 @@ function fullScreenService($rootElement, configService, $interval, events) {
 
     screenfull.on('change', onChange);
 
+    // override default brower full screen exiting action
+    document.addEventListener('fullscreenchange', exitFullScreenHandler);
+    document.addEventListener('webkitfullscreenchange', exitFullScreenHandler);
+    document.addEventListener('mozfullscreenchange', exitFullScreenHandler);
+    document.addEventListener('MSFullscreenChange', exitFullScreenHandler);
+
     events.$on(events.rvMapLoaded, (_, i) => {
         configService.getSync.map.instance.fullscreen = fs => {
             if ((service.isExpanded() && !fs) || (!service.isExpanded() && fs)) {
@@ -40,22 +46,40 @@ function fullScreenService($rootElement, configService, $interval, events) {
 
     return service;
 
+    function exitFullScreenHandler() {
+        if (!document.fullscreenElement && !document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
+            exitFullScreen();
+            onChange();
+        }
+    }
+
     function toggle() {
+        if (screenfull.isFullscreen) {
+            exitFullScreen();
+        } else {
+            enterFullScreen();
+        }
+    }
+
+    function enterFullScreen() {
+        lastKnownCenter = configService.getSync.map.instance.extent.getCenter();
         const body = angular.element('body');
         const shellNode = angular.element('rv-shell');
+        body.attr('style', 'width: 100%; height: 100%');
+        $rootElement.attr('style', `overflow: visible; z-index: ${FULL_SCREEN_Z_INDEX};`);
+        shellNode.attr('style', `position: fixed; margin: 0; z-index: ${FULL_SCREEN_Z_INDEX};`);
+        angular.element('body').addClass('rv-full-screen');
+        screenfull.toggle(body[0]);
+    }
 
+    function exitFullScreen() {
         lastKnownCenter = configService.getSync.map.instance.extent.getCenter();
-
-        body.attr('style', (screenfull.isFullscreen ? '' : 'width: 100%; height: 100%'));
-        $rootElement.attr('style', (screenfull.isFullscreen ? '' : `overflow: visible; z-index: ${FULL_SCREEN_Z_INDEX};`));
-        shellNode.attr('style', (screenfull.isFullscreen ? '' : `position: fixed; margin: 0; z-index: ${FULL_SCREEN_Z_INDEX};`));
-
-        if (screenfull.isFullscreen) {
-            angular.element('body').removeClass('rv-full-screen');
-        } else {
-            angular.element('body').addClass('rv-full-screen');
-        }
-
+        const body = angular.element('body');
+        const shellNode = angular.element('rv-shell');
+        body.attr('style', (''));
+        $rootElement.attr('style', (''));
+        shellNode.attr('style', (''));
+        angular.element('body').removeClass('rv-full-screen');
         screenfull.toggle(body[0]);
     }
 
