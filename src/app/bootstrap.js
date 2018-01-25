@@ -1,8 +1,6 @@
 /* global Logdown */
 // eslint-disable-next-line max-statements
 
-import geoapi from 'geoApi';
-
 // check if window.RV has been created by ie-polyfills already, otherwise init
 const RV = window.RV = window.RV ? window.RV : {};
 
@@ -255,6 +253,8 @@ nodes.filter(node => nodes.indexOf(node) === -1).forEach(node => nodes.push(node
 
 // store nodes to use in app-seed; avoids a second DOM traversal
 RV._nodes = nodes;
+
+export const pageNodes = nodes;
 
 let counter = 0;
 

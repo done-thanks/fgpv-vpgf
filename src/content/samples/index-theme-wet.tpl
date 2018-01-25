@@ -29,6 +29,13 @@
                 .myMap {
                     height: 600px;
                 }
+
+                #container {
+                    min-width: 310px;
+                    max-width: 800px;
+                    height: 400px;
+                    margin: 0 auto
+                }
             </style>
 
             <% for (var index in htmlWebpackPlugin.files.css) { %>
@@ -40,6 +47,7 @@
             <% } %>
 
             <script src="https://code.jquery.com/jquery-2.2.4.js" integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI=" crossorigin="anonymous"></script>
+            <script src="https://ramp-pcar.github.io/dqvue/samples/dqvue.js"></script>
         </head>
         <body vocab="http://schema.org/" typeof="WebPage">
             <ul id="wb-tphp">
@@ -111,6 +119,23 @@
                 <h1 id="wb-cont" property="name">Web Experience Toolkit (WET) theme</h1>
                 
 
+                <table style="width:100%">
+                <tr>
+                    <th>Firstname</th>
+                    <th>Lastname</th> 
+                    <th>Age</th>
+                </tr>
+                <tr>
+                    <td>Jill</td>
+                    <td>Smith</td> 
+                    <td>50</td>
+                </tr>
+                <tr>
+                    <td>Eve</td>
+                    <td>Jackson</td> 
+                    <td>94</td>
+                </tr>
+                </table>
 
                 <div class="myMap" id="theme-map" is="rv-map"
                 rv-config="config/config-sample-06-structured-legend-dynamic-children-split-layers.json"
@@ -208,6 +233,36 @@
                     <dt>Date modified:&#32;</dt>
                     <dd><time property="dateModified">2017-10-25</time></dd>
                 </dl>
+
+                <script src="https://code.highcharts.com/highcharts.js"></script>
+                
+
+                <script>
+                    window.dvData1 = {
+                        title: "Hi",
+                        message: "This is the first DV instance and a simple chart."
+                    };
+
+                    window.dvChartConfig1 = {
+                        xAxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                        ]
+                        },
+                        series: [{
+                        data: [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4],
+                        type: 'column'
+                        }]
+                    };
+                    </script>
+
+                    <dv-section dv-data="dvData1" id="dv1">
+                    <h2>{{ title }}</h2>
+                    <p>{{ message }}</p>
+
+                    <dv-chart dv-config="dvChartConfig1"></dv-chart>
+                    </dv-section>
+                    </script>
+                
             </main>
             <footer role="contentinfo" id="wb-info" class="visible-sm visible-md visible-lg wb-navcurr">
                 <div class="container">
@@ -245,6 +300,9 @@
             <!--[if gte IE 9 | !IE ]><!-->
            
             <script src="http://wet-boew.github.io/v4.0-ci/wet-boew/js/wet-boew.min.js"></script>
+            <script>
+                wb.add('table');
+            </script>
             <!--<![endif]-->
             <!--[if lt IE 9]>
             <script src="http://wet-boew.github.io/v4.0-ci/wet-boew/js/ie8-wet-boew2.min.js"></script>
