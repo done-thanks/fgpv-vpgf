@@ -182,22 +182,29 @@ function legendServiceFactory(Geo, ConfigObject, configService, LegendBlock, Lay
 
             const layerRecord = layerRegistry.getLayerRecord(legendBlockConfig.layerId);
 
-            // need time to reload children for Dynamic layers
-            promise = common.$q(resolve => {
-                layerRecord.addStateListener(_onLayerRecordLoad);
+            if (!promise) { // ensure only one promise is created
+                // need time to reload children for Dynamic layers
+                promise = common.$q((resolve, reject) => {
+                    layerRecord.addStateListener(_onLayerRecordLoad);
 
-                function _onLayerRecordLoad(state) {
-                    if (state === 'rv-loaded') {
-                        layerRecord.removeStateListener(_onLayerRecordLoad);
+                    function _onLayerRecordLoad(state) {
+                        // add back entry
+                        if (state === 'rv-loaded' || state === 'rv-error') {
+                            layerRecord.removeStateListener(_onLayerRecordLoad);
 
-                        _boundingBoxRemoval(legendBlock);
+                            _boundingBoxRemoval(legendBlock);
 
-                        legendBlockParent.addEntry(reloadedLegendBlock, index);
+                            legendBlockParent.addEntry(reloadedLegendBlock, index);
+                        }
 
-                        resolve(legendBlockParent);
+                        if (state === 'rv-loaded') {
+                            resolve(legendBlockParent);
+                        } else if (state === 'rv-error') {
+                            reject(layerRecord.name);
+                        }
                     }
-                }
-            });
+                });
+            }
         });
 
         return promise;
@@ -346,6 +353,10 @@ function legendServiceFactory(Geo, ConfigObject, configService, LegendBlock, Lay
          */
         function _makeDynamicGroupBlock(blockConfig, blueprints) {
             const layerConfig = blueprints.main.config;
+
+            layerConfig.cachedRefreshInterval = layerConfig.refreshInterval;
+
+            layerConfig.layerEntries.forEach(entry => (entry.cachedRefreshInterval = (entry.refreshInterval = layerConfig.refreshInterval)));
 
             const groupDefaults = ConfigObject.DEFAULTS.legend[ConfigObject.TYPES.legend.GROUP];
 
@@ -617,6 +628,7 @@ function legendServiceFactory(Geo, ConfigObject, configService, LegendBlock, Lay
                         derivedChildLayerConfigSource.index === layerConfig.layerEntries[0].index)) {
 
                         derivedChildLayerConfigSource.userDisabledControls.push('opacity');
+                        derivedChildLayerConfigSource.userDisabledControls.push('interval');
                     }
 
                     const derviedChildLayerConfig = new ConfigObject.layers.DynamicLayerEntryNode(
@@ -669,6 +681,8 @@ function legendServiceFactory(Geo, ConfigObject, configService, LegendBlock, Lay
 
                 layerConfig.layerEntries.forEach(entry => (entry.cachedStyle = entry.currentStyle))
             }
+
+            layerConfig.cachedRefreshInterval = layerConfig.refreshInterval;
 
             const proxyWrapper = new LegendBlock.ProxyWrapper(mainProxy, layerConfig);
 

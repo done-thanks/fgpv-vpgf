@@ -38,7 +38,7 @@ angular
     .module('app.core')
     .factory('configService', configService);
 
-function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, events, gapiService, ConfigObject) {
+function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, events, gapiService, ConfigObject, stateManager, referenceService) {
     const DEFAULT_LANGS = ['en-CA', 'fr-CA'];
 
     const States = {
@@ -51,7 +51,7 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
     let _loadingState = States.NEW;
     let _remoteConfig = false;
     let languages;
-    const configList = [];
+    let configList = [];
 
     /**
      * Each language has an instance of this class. However, it is only populated when you call `configInstance.promise`. At this point
@@ -233,6 +233,45 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
         }
 
         /**
+         * Reset the map by removing all layers after the map has been instantiated.
+         *
+         * @memberof app.core
+         * @function resetMap
+         */
+        resetMap() {
+            configList.forEach(conf => {
+                if (conf.config) {
+                    const map = conf.config.map;
+
+                    // remove all layers from legend
+                    while (map.legendBlocks.entries.length > 0) {
+                        map.legendBlocks.removeEntry(map.legendBlocks.entries[0]);
+                    }
+
+                    // remove all layers from map
+                    map.layerRecords.forEach(layerRecord => {
+                        map.instance.removeLayer(layerRecord._layer);
+                    });
+
+                    // remove all bounding boxes
+                    map.boundingBoxRecords.forEach(boundingRecord => {
+                        map.instance.removeLayer(boundingRecord);
+                    });
+
+                    // temporary solution for CESI until API complete
+                    map.resetLayers();
+
+                    // close any open panels, but open main TOC
+                    stateManager.setActive({ tableFulldata: false } , { sideMetadata: false }, { sideSettings: false }, { mainToc: true });
+
+                    // Removes the highlighted features and markers if feature details was open
+                    map.highlightLayer.clearHilight();
+                    angular.element(referenceService.mapNode).toggleClass('rv-map-highlight', false);
+                }
+            });
+        }
+
+        /**
          * Sets the current language to the supplied value and broadcasts config initialization event, since this is a new config object.
          * @param {String} lang language value to be set
          */
@@ -300,6 +339,7 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
      */
     function configLoader(configAttr, svcAttr, langs) {
         _loadingState = States.LOADING;
+        configList = [];    // empty previous configs
 
         // create initial config objects
         langs.forEach(lang => {
@@ -310,6 +350,11 @@ function configService($q, $rootElement, $timeout, $http, $translate, $mdToast, 
         $q.all([gapiService.isReady, configList[0].promise]).then(() => {
             _loadingState = States.LOADED;
             events.$broadcast(events.rvCfgInitialized);
+        });
+
+        // For switching Config
+        gapiService.isReady.then(function() {
+            _loadingState = States.LOADED;
         });
     }
 

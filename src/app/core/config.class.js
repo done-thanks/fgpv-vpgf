@@ -1,4 +1,6 @@
 import screenfull from 'screenfull';
+import { Observable } from 'rxjs/Rx';
+import { XY, XYBounds } from 'api/geometry';
 
 /**
  * @module ConfigObject
@@ -25,7 +27,7 @@ angular
     .factory('ConfigObject', ConfigObjectFactory);
 
 // eslint-disable-next-line max-statements
-function ConfigObjectFactory(Geo, gapiService, common) {
+function ConfigObjectFactory(Geo, gapiService, common, events) {
 
     const ref = {
         legendElementCounter: 0,
@@ -55,9 +57,10 @@ function ConfigObjectFactory(Geo, gapiService, common) {
                     'query',
 
                     'symbology',
-                    // 'reload', // reload control is not allowed on groups, but since dynamic layer is represented by a group, it will be show up on the dynamic layer placeholder and error templates
+                    'reload',
                     'remove',
-                    'settings'
+                    'settings',
+                    'interval'
                 ],
                 disabledControls: [],
                 userDisabledControls: []
@@ -86,7 +89,8 @@ function ConfigObjectFactory(Geo, gapiService, common) {
                     'remove',
                     'settings',
                     'data',
-                    'symbology'
+                    'symbology',
+                    'interval'
                 ],
                 disabledControls: [],
                 userDisabledControls: []
@@ -114,7 +118,8 @@ function ConfigObjectFactory(Geo, gapiService, common) {
                     'settings',
                     // 'data',
                     'symbology',
-                    'styles'
+                    'styles',
+                    'interval'
                 ],
                 disabledControls: [],
                 userDisabledControls: [],
@@ -147,7 +152,8 @@ function ConfigObjectFactory(Geo, gapiService, common) {
                     'remove',
                     'settings',
                     'data',
-                    'symbology'
+                    'symbology',
+                    'interval'
                 ],
                 disabledControls: [],
                 userDisabledControls: [],
@@ -175,7 +181,8 @@ function ConfigObjectFactory(Geo, gapiService, common) {
                         'remove',
                         'settings',
                         'data',
-                        'symbology'
+                        'symbology',
+                        'interval'
                     ],
                     disabledControls: [],
                     userDisabledControls: []
@@ -537,6 +544,7 @@ function ConfigObjectFactory(Geo, gapiService, common) {
             this._extent = source.extent ?
                 gapiService.gapi.Map.getExtentFromJson(source.extent) :
                 undefined;
+            this._refreshInterval = typeof source.refreshInterval !== 'undefined' ? source.refreshInterval : 0;
 
             const defaults = DEFAULTS.layer[this.layerType];
 
@@ -567,6 +575,9 @@ function ConfigObjectFactory(Geo, gapiService, common) {
         get metadataUrl () {            return this._metadataUrl; }
         get catalogueUrl () {           return this._catalogueUrl; }
         get extent () {                 return this._extent; }
+
+        get refreshInterval () {        return this._refreshInterval; }
+        set refreshInterval (value) {   this._refreshInterval = value; }
 
         get initialFilteredQuery() { return this._initialFilteredQuery; }
         set initialFilteredQuery(value) { this._initialFilteredQuery = value; }
@@ -611,6 +622,7 @@ function ConfigObjectFactory(Geo, gapiService, common) {
                 catalogueUrl: this.catalogueUrl,
                 layerType: this.layerType,
                 extent: this.source.extent,
+                refreshInterval: this.refreshInterval,
                 controls: this.controls,
                 disabledControls: this.disabledControls,
                 state: this.state.JSON
@@ -788,7 +800,6 @@ function ConfigObjectFactory(Geo, gapiService, common) {
         get stateOnly () { return this._stateOnly; }
         get extent () { return this._extent; }
         get table () { return this._table; }
-
         get layerType () { return layerTypes.ESRI_DYNAMIC; }
 
         get JSON() {
@@ -1858,6 +1869,40 @@ function ConfigObjectFactory(Geo, gapiService, common) {
         set isLoaded (value) {          this._isLoaded = value; }
 
         storeMapReference(instance) {
+
+            // Begin hooking API into instance functions -------------------------------
+            events.$on(events.rvApiMapAdded, (_, mapInstance) => {
+                mapInstance.zoomChanged = Observable.create(subscriber => {
+                    const originalSetZoom = instance.setZoom;
+                    instance.setZoom = function() {
+                        subscriber.next(arguments[0]);
+                        return originalSetZoom.apply(this, arguments);
+                    }
+                });
+
+                mapInstance.boundsChanged = Observable.create(subscriber => {
+                    events.$on(events.rvExtentChange, (_, d) => subscriber.next(extentToApi(d.extent)));
+                });
+
+                mapInstance.centerChanged = Observable.create(subscriber => {
+                    events.$on(events.rvExtentChange, (_, d) => {
+                        const centerXY = d.extent.getCenter();
+
+                        subscriber.next(pointToApi(centerXY.x, centerXY.y));
+                    });
+                });
+            });
+
+            function extentToApi(extent) {
+                const xy = gapiService.gapi.proj.localProjectExtent(extent, 4326);
+                return new XYBounds([xy.x1, xy.y1], [xy.x0, xy.y0]);
+            }
+
+            function pointToApi(x, y) {
+                const xy = gapiService.gapi.proj.localProjectPoint(instance.spatialReference.wkid, 4326, [x, y]);
+                return new XY(xy[0], xy[1]);
+            }
+
             this._instance = instance;
             this._isLoaded = false;
         }
@@ -1885,6 +1930,21 @@ function ConfigObjectFactory(Geo, gapiService, common) {
 
             this._instance = null;
             this._highlightLayer = null;
+        }
+
+        /**
+         * Clears the map of any existing layers.
+         *
+         * NOTE: temporary solution for CESI until API complete
+         *
+         * @function resetLayers
+         */
+        resetLayers () {
+            this._legendMappings = {};
+            this._layerRecords = [];
+            this._layerBlueprints = [];
+            this._layers = [];
+            this._boundingBoxRecords = [];
         }
 
         applyBookmark (value) {

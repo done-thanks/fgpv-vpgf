@@ -16,6 +16,8 @@ angular
 function geoService($http, $q, $rootScope, events, mapService, layerRegistry, configService,
     identifyService, /*LayerBlueprint,*/ bookmarkService, ConfigObject, legendService, $timeout) {
 
+    let deregisterListener;
+
     // TODO update how the layerOrder works with the UI
     // Make the property read only. All angular bindings will be a one-way binding to read the state of layerOrder
     // Add a function to update the layer order. This function will raise a change event so other interested
@@ -32,6 +34,8 @@ function geoService($http, $q, $rootScope, events, mapService, layerRegistry, co
 
         destroyMap() {
             mapService.destroyMap();
+
+            deregisterListener(); // deregister the config updated listener
 
             return this;
         }
@@ -62,7 +66,8 @@ function geoService($http, $q, $rootScope, events, mapService, layerRegistry, co
                 legendService.constructLegend(config.map.layers, config.map.legend);
                 this._isMapReady = true;
                 $rootScope.$broadcast(events.rvApiReady);
-                events.$on(events.rvCfgUpdated, (evt, layers) => {
+
+                deregisterListener = events.$on(events.rvCfgUpdated, (evt, layers) => {
                     let orderdBookmarkIds = bookmarkService.getOrderdBookmarkIds();
                     layers.forEach(layer => {
                         if (orderdBookmarkIds.length !== 0) {   // it is a bookmark

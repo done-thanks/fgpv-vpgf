@@ -114,7 +114,7 @@ function tocService($q, $rootScope, $mdToast, $translate, referenceService, comm
                     .filter(a => a)[0];
 
                 if (findBlock) {        // open panel not reloaded, close any open panel
-                    stateManager.setActive({ tableFulldata: false } , { sideMetadata: false }, { sideSettings: false });
+                    stateManager.setActive({ tableFulldata: false }, { sideMetadata: false }, { sideSettings: false });
                     return;
                 }
 
@@ -154,6 +154,8 @@ function tocService($q, $rootScope, $mdToast, $translate, referenceService, comm
 
                 stateManager.toggleDisplayPanel(panel, data || legendBlock, openPanel.requester, 0);
             }
+        }, (layerName) => {
+            console.error('Failed to reload layer:', layerName);
         });
     }
 
